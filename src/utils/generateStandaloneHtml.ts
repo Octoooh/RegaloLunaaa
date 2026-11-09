@@ -1,0 +1,641 @@
+import { Song, GiftConfig } from "../data/songs";
+
+export function generateStandaloneHtml(songs: Song[], config: GiftConfig): string {
+  const songsJson = JSON.stringify(songs, null, 2);
+  const configJson = JSON.stringify(config, null, 2);
+
+  return `<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>${config.tituloRegalo || "Regalo Musical"}</title>
+  <meta name="description" content="${config.subtituloRegalo || "Un regalo musical inolvidable"}" />
+
+  <!-- Google Fonts: Playfair Display, Outfit & Alex Brush -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            sans: ['"Outfit"', 'system-ui', 'sans-serif'],
+            handwriting: ['"Alex Brush"', 'cursive'],
+          },
+          animation: {
+            'spin-slow': 'spin 18s linear infinite',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- SwiperJS CSS via CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      background-color: #07040a;
+      color: #ffffff;
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .glass-card-elevated {
+      background: rgba(20, 14, 26, 0.72);
+      backdrop-filter: blur(36px);
+      -webkit-backdrop-filter: blur(36px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .ambient-glow {
+      transition: background 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 1s ease;
+      will-change: background, transform;
+    }
+
+    .swiper-slide {
+      transition: transform 0.4s ease, opacity 0.4s ease;
+      opacity: 0.45;
+      transform: scale(0.9);
+    }
+    .swiper-slide-active {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .vinyl-grooves {
+      background: radial-gradient(circle, #111 25%, #222 26%, #111 38%, #262626 40%, #151515 52%, #222 54%, #0a0a0a 68%, #1f1f1f 70%, #0d0d0d 100%);
+      box-shadow: inset 0 0 15px rgba(255,255,255,0.1), 0 10px 30px rgba(0,0,0,0.8);
+    }
+
+    .seal-shadow {
+      box-shadow: 0 0 30px rgba(225, 29, 72, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    }
+  </style>
+</head>
+<body class="relative min-h-screen flex flex-col justify-between selection:bg-rose-500/30 selection:text-rose-200">
+
+  <!-- ========================================== -->
+  <!-- 1. FONDO AMBIENTAL ADAPTATIVO              -->
+  <!-- ========================================== -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div id="ambient-glow-1" class="ambient-glow absolute -top-[15%] left-1/2 -translate-x-1/2 w-[700px] h-[700px] md:w-[900px] md:h-[900px] rounded-full blur-[140px] opacity-40"></div>
+    <div id="ambient-glow-2" class="ambient-glow absolute top-[40%] -left-[10%] w-[500px] h-[500px] md:w-[700px] md:h-[700px] rounded-full blur-[160px] opacity-35"></div>
+    <div id="ambient-glow-3" class="ambient-glow absolute -bottom-[10%] -right-[10%] w-[550px] h-[550px] md:w-[800px] md:h-[800px] rounded-full blur-[150px] opacity-30"></div>
+    <div class="absolute inset-0 bg-radial from-transparent via-[#07040a]/50 to-[#07040a] opacity-80"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. PANTALLAS DE APERTURA INTERACTIVAS      -->
+  <!-- ========================================== -->
+  <div id="opening-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#07040a]/95 backdrop-blur-2xl transition-all duration-700">
+    <div id="view-envelope" class="w-full max-w-md text-center transition-all duration-500">
+      <div class="mb-4">
+        <span class="text-xs uppercase tracking-[0.25em] text-rose-300/80 font-sans">Un regalo especial para ti</span>
+        <h1 class="text-3xl md:text-4xl font-serif text-white mt-1">${config.tituloRegalo || "Nuestra Banda Sonora"}</h1>
+        <p class="text-sm text-white/60 font-sans mt-1">${config.destinatario || "Para alguien muy especial"}</p>
+      </div>
+
+      <div class="relative mx-auto w-72 h-48 md:w-80 md:h-52 bg-gradient-to-br from-rose-950/60 to-purple-950/60 rounded-xl border border-rose-500/20 shadow-2xl flex items-center justify-center cursor-pointer group hover:scale-[1.02] transition-transform duration-300" onclick="openGiftEnvelope()">
+        <div id="envelope-flap" class="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-rose-900/50 to-transparent border-t border-rose-400/30 rounded-t-xl transition-all duration-700 origin-top"></div>
+        
+        <div id="envelope-letter" class="absolute inset-3 bg-stone-100 text-stone-900 rounded-lg p-4 shadow-xl opacity-0 scale-95 transition-all duration-700 text-left pointer-events-none flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-serif text-stone-500 italic">De: ${config.remitente || "Con todo mi amor"}</div>
+            <p class="font-serif italic text-xs leading-relaxed text-stone-800 mt-2 line-clamp-4">
+              "${config.mensajeCarta || "He reunido nuestras canciones favoritas en este regalo..."}"
+            </p>
+          </div>
+          <div class="text-right text-[10px] font-sans text-rose-600 font-semibold tracking-wider uppercase">Toca para escuchar &rarr;</div>
+        </div>
+
+        <div id="envelope-seal" class="relative z-10 w-16 h-16 rounded-full bg-gradient-to-tr from-rose-800 via-rose-600 to-red-500 flex items-center justify-center seal-shadow text-white shadow-2xl group-hover:scale-110 transition-transform duration-300">
+          <svg class="w-8 h-8 text-rose-100" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </div>
+      </div>
+
+      <p class="text-xs text-white/50 mt-5 font-sans animate-pulse">Toca el sello para abrir el regalo</p>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. CABECERA PRINCIPAL                      -->
+  <!-- ========================================== -->
+  <header class="relative z-10 flex items-center justify-between gap-8 px-6 py-5 max-w-6xl mx-auto w-full">
+    <div class="flex items-center gap-2">
+      <svg class="w-5 h-5 text-rose-400" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+      </svg>
+      <span class="text-lg font-serif tracking-wide text-white whitespace-nowrap shrink-0">${config.tituloRegalo || "Melodías & Recuerdos"}</span>
+    </div>
+
+    <div class="hidden md:flex items-center gap-6 text-xs text-white/60 tracking-wider uppercase font-sans">
+      <span class="hover:text-white transition-colors cursor-pointer" onclick="openDedicationModal()">Ver Carta</span>
+      <span class="text-white/20">/</span>
+      <span id="active-track-badge" class="text-white/90 font-medium">Pista 1 de ${songs.length}</span>
+      <span class="text-white/20">/</span>
+      <span class="text-rose-300 font-medium">${config.remitente || "Con amor"}</span>
+    </div>
+
+    <div class="flex items-center gap-2 shrink-0">
+      <button onclick="replayIntro()" class="px-3.5 py-1.5 text-xs font-medium text-white/90 glass-card rounded-full hover:bg-white/10 hover:text-white transition-all whitespace-nowrap flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        <span>Abrir de nuevo</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 4. CONTENIDO PRINCIPAL: CARRUSEL SWIPER    -->
+  <!-- ========================================== -->
+  <main class="relative z-10 w-full flex-1 flex flex-col justify-center items-center py-6 px-4">
+    <div class="text-center max-w-xl mx-auto mb-6 px-4">
+      <span class="font-handwriting text-2xl md:text-3xl text-rose-300/90 block mb-1">Para mi persona favorita</span>
+      <h2 id="current-song-headline" class="text-2xl md:text-4xl font-serif font-bold text-white tracking-tight"></h2>
+      <p id="current-song-artist-headline" class="text-sm md:text-base text-white/70 font-sans mt-1"></p>
+    </div>
+
+    <div class="w-full max-w-4xl mx-auto">
+      <div class="swiper mySwiper w-full py-4 overflow-visible">
+        <div class="swiper-wrapper" id="swiper-slides-container"></div>
+
+        <div class="flex items-center justify-center gap-4 mt-8">
+          <button class="swiper-btn-prev w-11 h-11 rounded-full glass-card hover:bg-white/15 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-95" aria-label="Canción anterior">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <div class="swiper-pagination !static !w-auto flex items-center gap-1.5"></div>
+          <button class="swiper-btn-next w-11 h-11 rounded-full glass-card hover:bg-white/15 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-95" aria-label="Canción siguiente">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 5. MINI REPRODUCTOR DE AUDIO FLOTANTE      -->
+  <!-- ========================================== -->
+  <footer class="relative z-20 w-full max-w-4xl mx-auto px-4 pb-6 pt-2">
+    <div class="glass-card-elevated rounded-2xl p-3 md:p-4 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-white/20">
+      <!-- Miniatura y Título -->
+      <div class="flex items-center gap-3 w-full sm:w-auto min-w-0">
+        <div class="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow">
+          <img id="footer-thumb" src="" alt="Portada" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800'" />
+          <div id="footer-playing-indicator" class="absolute inset-0 bg-black/40 hidden items-center justify-center">
+            <span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span>
+          </div>
+        </div>
+        <div class="min-w-0 flex-1">
+          <h4 id="footer-title" class="text-xs font-semibold text-white truncate"></h4>
+          <p id="footer-artist" class="text-[11px] text-white/60 truncate"></p>
+        </div>
+      </div>
+
+      <!-- Controles centrales y barra de progreso -->
+      <div class="flex-1 w-full max-w-md flex flex-col items-center gap-1.5">
+        <div class="flex items-center gap-4">
+          <button onclick="prevSong()" class="text-white/70 hover:text-white transition-colors cursor-pointer" title="Anterior">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
+          </button>
+          <button onclick="togglePlay()" class="w-9 h-9 rounded-full bg-gradient-to-tr from-rose-500 to-amber-400 text-white flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all cursor-pointer" title="Reproducir / Pausar">
+            <svg id="footer-play-icon" class="w-4 h-4 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="footer-pause-icon" class="w-4 h-4 fill-current hidden" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          </button>
+          <button onclick="nextSong()" class="text-white/70 hover:text-white transition-colors cursor-pointer" title="Siguiente">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+        <div class="w-full flex items-center gap-2 text-[10px] font-mono text-white/60">
+          <span id="footer-time-current">0:00</span>
+          <div onclick="seekAudioFromEvent(event, this)" class="flex-1 h-1.5 bg-white/10 hover:bg-white/20 rounded-full cursor-pointer relative transition-colors" title="Haz clic para saltar en la canción">
+            <div id="footer-progress-bar" class="h-full bg-gradient-to-r from-rose-500 to-amber-300 rounded-full" style="width: 0%"></div>
+          </div>
+          <span id="footer-time-duration">0:00</span>
+        </div>
+      </div>
+
+      <!-- Enlace externo a Spotify -->
+      <div class="hidden sm:flex items-center gap-2 shrink-0">
+        <a id="player-spotify-link" href="#" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-[#1DB954] hover:text-black text-white text-xs font-semibold font-sans flex items-center gap-1.5 border border-white/15 transition-all">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+          </svg>
+          <span>Spotify</span>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal Dedicatoria -->
+  <div id="dedication-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="glass-card-elevated max-w-lg w-full rounded-2xl p-6 md:p-8 text-center relative border border-rose-500/30">
+      <button onclick="closeDedicationModal()" class="absolute top-4 right-4 text-white/50 hover:text-white text-lg">&times;</button>
+      <span class="font-handwriting text-3xl text-rose-300 block mb-1">Para ti</span>
+      <h3 class="font-serif text-2xl font-bold text-white mb-4">${config.tituloRegalo || "Nuestra Historia en Canciones"}</h3>
+      <p class="font-serif italic text-white/80 leading-relaxed text-sm md:text-base mb-6">
+        "${config.mensajeCarta || "He reunido en esta pequeña cápsula las canciones que me recuerdan a ti..."}"
+      </p>
+      <div class="text-xs uppercase tracking-widest text-rose-300 font-sans font-semibold">${config.remitente || "Con todo mi amor"}</div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+  <!-- ========================================================================= -->
+  <!-- 6. SCRIPT PRINCIPAL & CONSTANTE EDITABLE DE CANCIONES                    -->
+  <!-- ========================================================================= -->
+  <script>
+    /**
+     * =========================================================================
+     * CONSTANTE: LISTA_CANCIONES
+     * 
+     * 1. REPRODUCCIÓN POR DROPBOX O MP3 ('audioPreview'):
+     *    - Pega tu link de Dropbox tal como lo copias:
+     *      audioPreview: "https://www.dropbox.com/s/xyz123/cancion.mp3?dl=0"
+     *      (El sistema lo transforma automáticamente para reproducir el audio directo).
+     *    - O guarda el archivo junto al index.html: audioPreview: "cancion1.mp3".
+     * 
+     * 2. PORTADAS DE GOOGLE O PERSONALIZADAS ('portada'):
+     *    - En Google Imágenes: abre la foto en grande, haz CLIC DERECHO y selecciona
+     *      "Copiar dirección de la imagen" (NO "Copiar vínculo" de la búsqueda).
+     * 
+     * 3. ENLACE A SPOTIFY ('spotifyUrl'):
+     *    - El botón de cada tarjeta abrirá directamente la pista en Spotify.
+     * =========================================================================
+     */
+    const LISTA_CANCIONES = ${songsJson};
+
+    const CONFIG_REGALO = ${configJson};
+
+    let activeIndex = 0;
+    let isPlaying = false;
+    let audio = new Audio();
+    audio.crossOrigin = "anonymous";
+    let swiperInstance = null;
+
+    // Convertidor automático de enlaces de Dropbox para streaming directo
+    function formatAudioUrl(url) {
+      if (!url) return "";
+      let clean = url.trim();
+      if (clean.includes("dropbox.com")) {
+        clean = clean.replace("www.dropbox.com", "dl.dropboxusercontent.com");
+        clean = clean.replace(/[?&]dl=0/, "");
+        if (!clean.includes("raw=1") && !clean.includes("dl=1")) {
+          clean += (clean.includes("?") ? "&" : "?") + "raw=1";
+        }
+      }
+      return clean;
+    }
+
+    function formatTime(secs) {
+      if (!secs || isNaN(secs)) return "0:00";
+      const m = Math.floor(secs / 60);
+      const s = Math.floor(secs % 60);
+      return m + ":" + (s < 10 ? "0" : "") + s;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setupOpeningView();
+      renderSwiperSlides();
+      initSwiper();
+      setupAudioListeners();
+      updateActiveSongDetails(0);
+    });
+
+    function setupOpeningView() {
+      const overlay = document.getElementById("opening-overlay");
+      const viewEnvelope = document.getElementById("view-envelope");
+
+      if (CONFIG_REGALO.tipoApertura === "directo") {
+        overlay.classList.add("hidden");
+        triggerHeartConfetti();
+        return;
+      }
+
+      viewEnvelope.classList.remove("hidden");
+    }
+
+    function openGiftEnvelope() {
+      const seal = document.getElementById("envelope-seal");
+      const flap = document.getElementById("envelope-flap");
+      const letter = document.getElementById("envelope-letter");
+      const overlay = document.getElementById("opening-overlay");
+
+      seal.style.transform = "scale(0.8) rotate(-15deg)";
+      seal.style.opacity = "0.2";
+      
+      setTimeout(() => {
+        flap.style.transform = "rotateX(180deg)";
+        letter.style.opacity = "1";
+        letter.style.transform = "translateY(-30px) scale(1)";
+        triggerHeartConfetti();
+
+        setTimeout(() => {
+          overlay.style.opacity = "0";
+          setTimeout(() => {
+            overlay.classList.add("hidden");
+            startPlayback(0);
+          }, 600);
+        }, 1400);
+      }, 300);
+    }
+
+    function replayIntro() {
+      const overlay = document.getElementById("opening-overlay");
+      const seal = document.getElementById("envelope-seal");
+      const flap = document.getElementById("envelope-flap");
+      const letter = document.getElementById("envelope-letter");
+
+      if (seal) { seal.style.transform = "none"; seal.style.opacity = "1"; }
+      if (flap) flap.style.transform = "none";
+      if (letter) { letter.style.opacity = "0"; letter.style.transform = "scale(0.95)"; }
+
+      pauseAudio();
+      overlay.classList.remove("hidden");
+      setTimeout(() => { overlay.style.opacity = "1"; }, 50);
+    }
+
+    function renderSwiperSlides() {
+      const container = document.getElementById("swiper-slides-container");
+      container.innerHTML = "";
+
+      LISTA_CANCIONES.forEach((song, idx) => {
+        const slide = document.createElement("div");
+        slide.className = "swiper-slide flex justify-center";
+        slide.innerHTML = \`
+          <div class="glass-card rounded-3xl p-5 md:p-6 w-full max-w-sm md:max-w-md flex flex-col justify-between relative group hover:border-white/30 transition-all duration-300">
+            
+            <!-- Portada interactiva con Vinilo y Botón Central -->
+            <div class="relative w-full aspect-square rounded-2xl overflow-hidden shadow-2xl mb-4 group/cover">
+              <img src="\${song.portada}" alt="\${song.titulo}" class="w-full h-full object-cover transition-transform duration-700 group-hover/cover:scale-105" onerror="this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800'" />
+              
+              <!-- Botón central grande para Reproducir / Pausar -->
+              <button onclick="togglePlay()" class="absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 group-hover/cover:opacity-100 transition-all duration-300 backdrop-blur-[2px] cursor-pointer" title="Reproducir / Pausar">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-rose-500 to-amber-400 text-white flex items-center justify-center shadow-2xl transform transition-transform group-hover/cover:scale-110 active:scale-95">
+                  <svg id="card-play-icon-\${idx}" class="w-7 h-7 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  <svg id="card-pause-icon-\${idx}" class="w-7 h-7 fill-current hidden" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                </div>
+              </button>
+
+              <!-- Disco de vinilo que gira al reproducir -->
+              <div id="slide-vinyl-\${idx}" class="absolute top-2 right-2 w-20 h-20 rounded-full vinyl-grooves opacity-0 translate-x-4 transition-all duration-700 flex items-center justify-center shadow-2xl pointer-events-none">
+                <div class="w-7 h-7 rounded-full bg-cover bg-center border border-white/40" style="background-image: url('\${song.portada}');">
+                  <div class="w-full h-full flex items-center justify-center"><div class="w-1.5 h-1.5 bg-black rounded-full"></div></div>
+                </div>
+              </div>
+
+              \${song.audioPreview && song.audioPreview.includes("dropbox.com") ? \`
+                <div class="absolute bottom-3 left-3 px-2 py-0.5 rounded-lg bg-black/60 backdrop-blur-md border border-white/15 text-[10px] text-cyan-300 font-sans flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                  <span>Audio vía Dropbox</span>
+                </div>
+              \` : ''}
+            </div>
+
+            <div class="mb-3 text-left">
+              <div class="text-[11px] font-sans uppercase tracking-widest text-rose-300 font-medium">\${song.fechaOMomento || "Momento Especial"}</div>
+              <h3 class="text-xl md:text-2xl font-serif font-bold text-white mt-0.5 truncate">\${song.titulo}</h3>
+              <p class="text-sm text-white/70 font-sans">\${song.album || song.artista}</p>
+            </div>
+
+            <!-- Controles integrados en la tarjeta -->
+            <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 mb-4 backdrop-blur-sm">
+              <div onclick="seekAudioFromEvent(event, this)" class="w-full h-2 bg-white/10 hover:bg-white/20 rounded-full cursor-pointer relative transition-colors" title="Haz clic para saltar en la canción">
+                <div id="card-progress-bar-\${idx}" class="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-300 rounded-full" style="width: 0%"></div>
+              </div>
+              <div class="flex justify-between items-center text-[10px] font-mono text-white/60 mt-1.5">
+                <span id="card-time-current-\${idx}">0:00</span>
+                <span id="card-time-duration-\${idx}">0:00</span>
+              </div>
+            </div>
+
+            <!-- Dedicatoria -->
+            <div class="relative bg-white/5 border border-white/10 rounded-2xl p-4 mb-4 text-stone-200 text-left">
+              <svg class="w-5 h-5 text-rose-400/40 mb-1" viewBox="0 0 24 24" fill="currentColor"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
+              <p class="font-serif italic text-xs md:text-sm leading-relaxed text-white/90">
+                "\${song.dedicatoria}"
+              </p>
+            </div>
+
+            <!-- Botón para abrir en Spotify -->
+            <a href="\${song.spotifyUrl}" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-[#1DB954] hover:text-black text-white text-xs font-semibold font-sans flex items-center justify-center gap-2 transition-all duration-300 border border-white/15 shadow">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+              <span>Abrir en Spotify</span>
+            </a>
+          </div>
+        \`;
+        container.appendChild(slide);
+      });
+    }
+
+    function initSwiper() {
+      swiperInstance = new Swiper('.mySwiper', {
+        effect: 'coverflow',
+        grabCursor: true,
+        centeredSlides: true,
+        slidesPerView: 'auto',
+        initialSlide: 0,
+        speed: 600,
+        coverflowEffect: { rotate: 0, stretch: 0, depth: 140, modifier: 1.6, slideShadows: false },
+        pagination: { el: '.swiper-pagination', clickable: true },
+        navigation: { nextEl: '.swiper-btn-next', prevEl: '.swiper-btn-prev' },
+        on: {
+          slideChange: function() {
+            activeIndex = this.activeIndex;
+            updateActiveSongDetails(activeIndex);
+            if (isPlaying) {
+              startPlayback(activeIndex);
+            }
+          }
+        }
+      });
+    }
+
+    function setupAudioListeners() {
+      audio.ontimeupdate = () => {
+        const cur = audio.currentTime || 0;
+        const dur = audio.duration || 180;
+        const percent = Math.min(100, (cur / (dur || 1)) * 100) + "%";
+
+        const curText = formatTime(cur);
+        const durText = formatTime(dur);
+
+        const fCur = document.getElementById("footer-time-current");
+        const fDur = document.getElementById("footer-time-duration");
+        const fBar = document.getElementById("footer-progress-bar");
+        if (fCur) fCur.textContent = curText;
+        if (fDur) fDur.textContent = durText;
+        if (fBar) fBar.style.width = percent;
+
+        const cCur = document.getElementById("card-time-current-" + activeIndex);
+        const cDur = document.getElementById("card-time-duration-" + activeIndex);
+        const cBar = document.getElementById("card-progress-bar-" + activeIndex);
+        if (cCur) cCur.textContent = curText;
+        if (cDur) cDur.textContent = durText;
+        if (cBar) cBar.style.width = percent;
+      };
+
+      audio.onended = () => {
+        nextSong();
+      };
+    }
+
+    function updateActiveSongDetails(index) {
+      const song = LISTA_CANCIONES[index];
+      if (!song) return;
+
+      document.getElementById("current-song-headline").textContent = song.titulo;
+      document.getElementById("current-song-artist-headline").textContent = song.album || song.artista;
+      document.getElementById("active-track-badge").textContent = "Pista " + (index + 1) + " de " + LISTA_CANCIONES.length;
+
+      document.getElementById("footer-thumb").src = song.portada;
+      document.getElementById("footer-title").textContent = song.titulo;
+      document.getElementById("footer-artist").textContent = song.album || song.artista;
+      document.getElementById("player-spotify-link").href = song.spotifyUrl;
+
+      const primaryColor = song.colorAmbiental || "#e11d48";
+      const secondaryColor = song.colorSecundario || "#9333ea";
+
+      document.getElementById("ambient-glow-1").style.background = \`radial-gradient(circle, \${primaryColor} 0%, transparent 70%)\`;
+      document.getElementById("ambient-glow-2").style.background = \`radial-gradient(circle, \${secondaryColor} 0%, transparent 70%)\`;
+      document.getElementById("ambient-glow-3").style.background = \`radial-gradient(circle, \${primaryColor} 0%, transparent 70%)\`;
+    }
+
+    function startPlayback(idx) {
+      activeIndex = idx;
+      const song = LISTA_CANCIONES[idx];
+      if (!song) return;
+
+      const url = formatAudioUrl(song.audioPreview || "");
+      audio.src = url;
+      audio.currentTime = 0;
+      audio.play()
+        .then(() => setPlayingState(true))
+        .catch(() => setPlayingState(false));
+    }
+
+    function togglePlay() {
+      if (isPlaying) {
+        audio.pause();
+        setPlayingState(false);
+      } else {
+        if (audio.src && audio.currentTime > 0 && !audio.ended) {
+          audio.play()
+            .then(() => setPlayingState(true))
+            .catch(() => setPlayingState(false));
+        } else {
+          startPlayback(activeIndex);
+        }
+      }
+    }
+
+    function pauseAudio() {
+      audio.pause();
+      setPlayingState(false);
+    }
+
+    function prevSong() {
+      if (swiperInstance) {
+        swiperInstance.slidePrev();
+      }
+    }
+
+    function nextSong() {
+      if (swiperInstance) {
+        swiperInstance.slideNext();
+      }
+    }
+
+    function seekAudioFromEvent(e, el) {
+      const rect = el.getBoundingClientRect();
+      const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const dur = audio.duration || 180;
+      audio.currentTime = pos * dur;
+    }
+
+    function setPlayingState(playing) {
+      isPlaying = playing;
+
+      const fPlay = document.getElementById("footer-play-icon");
+      const fPause = document.getElementById("footer-pause-icon");
+      const fIndicator = document.getElementById("footer-playing-indicator");
+
+      if (fPlay) fPlay.classList.toggle("hidden", playing);
+      if (fPause) fPause.classList.toggle("hidden", !playing);
+      if (fIndicator) {
+        fIndicator.classList.toggle("hidden", !playing);
+        fIndicator.classList.toggle("flex", playing);
+      }
+
+      LISTA_CANCIONES.forEach((_, idx) => {
+        const disc = document.getElementById("slide-vinyl-" + idx);
+        const cardPlay = document.getElementById("card-play-icon-" + idx);
+        const cardPause = document.getElementById("card-pause-icon-" + idx);
+
+        if (idx === activeIndex && playing) {
+          if (disc) {
+            disc.style.opacity = "1";
+            disc.style.transform = "translateX(0) rotate(360deg)";
+            disc.classList.add("animate-spin-slow");
+          }
+          if (cardPlay) cardPlay.classList.add("hidden");
+          if (cardPause) cardPause.classList.remove("hidden");
+        } else {
+          if (disc) {
+            disc.style.opacity = "0";
+            disc.style.transform = "translateX(16px)";
+            disc.classList.remove("animate-spin-slow");
+          }
+          if (cardPlay) cardPlay.classList.remove("hidden");
+          if (cardPause) cardPause.classList.add("hidden");
+        }
+      });
+    }
+
+    function triggerHeartConfetti() {
+      if (typeof confetti === "function") {
+        confetti({
+          particleCount: 50,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#f43f5e', '#ec4899', '#fb7185', '#f59e0b', '#ffffff'],
+        });
+      }
+    }
+
+    function openDedicationModal() {
+      const modal = document.getElementById("dedication-modal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeDedicationModal() {
+      const modal = document.getElementById("dedication-modal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+</body>
+</html>`;
+}

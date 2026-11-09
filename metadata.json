@@ -1,0 +1,6 @@
+{
+  "name": "Regalo Musical Romántico",
+  "description": "Página web de regalo romántico interactivo con carrusel de canciones, dedicatorias, reproductor y fondo ambiental dinámico.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
